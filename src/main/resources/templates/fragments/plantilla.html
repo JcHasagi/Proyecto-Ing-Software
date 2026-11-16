@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="cabecera(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <title th:text="|${titulo} · SimInversión|">SimInversión</title>
+    <link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+<body>
+
+<!--/* Barra lateral con las secciones. seccion: el nombre de la sección activa (igual al del ícono) o null. */-->
+<aside th:fragment="lateral(seccion)" class="lateral" sec:authorize="isAuthenticated()">
+    <a class="lateral__marca" th:href="@{/catalogo}" aria-label="SimInversión, ir al catálogo">
+        <svg th:replace="~{fragments/iconos :: marca}"></svg>
+    </a>
+    <nav class="lateral__menu" aria-label="Secciones">
+        <a th:href="@{/portafolio}" th:classappend="${seccion == 'portafolio'} ? 'activo'"
+           th:attr="aria-current=${seccion == 'portafolio'} ? 'page' : null">
+            <svg th:replace="~{fragments/iconos :: portafolio}"></svg>
+            <span>Portafolio</span>
+        </a>
+        <a th:href="@{/catalogo}" th:classappend="${seccion == 'catalogo'} ? 'activo'"
+           th:attr="aria-current=${seccion == 'catalogo'} ? 'page' : null">
+            <svg th:replace="~{fragments/iconos :: catalogo}"></svg>
+            <span>Catálogo</span>
+        </a>
+        <a th:href="@{/escenarios}" th:classappend="${seccion == 'escenarios'} ? 'activo'"
+           th:attr="aria-current=${seccion == 'escenarios'} ? 'page' : null">
+            <svg th:replace="~{fragments/iconos :: escenarios}"></svg>
+            <span>Escenarios</span>
+        </a>
+        <a th:href="@{/aprende}" th:classappend="${seccion == 'aprende'} ? 'activo'"
+           th:attr="aria-current=${seccion == 'aprende'} ? 'page' : null">
+            <svg th:replace="~{fragments/iconos :: aprende}"></svg>
+            <span>Aprende</span>
+        </a>
+        <!--/* Las rutas /admin/** también están bloqueadas en el servidor; esto solo oculta los enlaces. */-->
+        <th:block sec:authorize="hasRole('ADMINISTRADOR')">
+            <span class="lateral__separador" aria-hidden="true"></span>
+            <a th:href="@{/admin/instrumentos}" th:classappend="${seccion == 'instrumentos'} ? 'activo'"
+               th:attr="aria-current=${seccion == 'instrumentos'} ? 'page' : null">
+                <svg th:replace="~{fragments/iconos :: instrumentos}"></svg>
+                <span>Instrumentos</span>
+            </a>
+            <a th:href="@{/admin/carga}" th:classappend="${seccion == 'carga'} ? 'activo'"
+               th:attr="aria-current=${seccion == 'carga'} ? 'page' : null">
+                <svg th:replace="~{fragments/iconos :: carga}"></svg>
+                <span>Carga de históricos</span>
+            </a>
+            <a th:href="@{/admin/estadisticas}" th:classappend="${seccion == 'estadisticas'} ? 'activo'"
+               th:attr="aria-current=${seccion == 'estadisticas'} ? 'page' : null">
+                <svg th:replace="~{fragments/iconos :: estadisticas}"></svg>
+                <span>Estadísticas</span>
+            </a>
+        </th:block>
+    </nav>
+</aside>
+
+<!--/*
+  Barra superior con la pestaña de la página actual.
+  Para un instrumento: iniciales != null y tipo = TipoInstrumento.name(); para una sección: iniciales = null
+  y tipo = el nombre del ícono de la sección ('catalogo', 'portafolio', 'carga', ...). Con titulo = null no se
+  muestra pestaña.
+*/-->
+<header th:fragment="superior(titulo, subtitulo, iniciales, tipo)" class="superior">
+    <a class="superior__marca" sec:authorize="!isAuthenticated()" th:href="@{/login}">
+        <svg th:replace="~{fragments/iconos :: marca}"></svg>
+        <span>SimInversión</span>
+    </a>
+
+    <div class="pestanas" th:if="${titulo != null}">
+        <div class="pestana">
+            <span th:if="${iniciales != null}" class="icono-instrumento"
+                  th:classappend="|icono-instrumento--${tipo}|" th:text="${iniciales}" aria-hidden="true">AA</span>
+            <span th:if="${iniciales == null}" class="icono-seccion" aria-hidden="true">
+                <svg th:replace="~{fragments/iconos :: __${tipo}__}"></svg>
+            </span>
+            <span class="pestana__texto">
+                <strong th:text="${titulo}">Título</strong>
+                <small th:text="${subtitulo}">Subtítulo</small>
+            </span>
+            <a th:if="${iniciales != null}" class="pestana__cerrar" th:href="@{/catalogo}"
+               aria-label="Cerrar y volver al catálogo" title="Cerrar">
+                <svg th:replace="~{fragments/iconos :: cerrar}"></svg>
+            </a>
+        </div>
+        <a th:if="${iniciales != null}" class="pestana-nueva" th:href="@{/catalogo}"
+           aria-label="Abrir otro instrumento" title="Abrir otro instrumento">
+            <svg th:replace="~{fragments/iconos :: mas}"></svg>
+        </a>
+    </div>
+
+    <div class="superior__usuario" sec:authorize="isAuthenticated()">
+        <a th:if="${portafolioActivo != null}" class="saldo-activo" th:href="@{/portafolios}"
+           title="Ver o cambiar de portafolio">
+            <span class="saldo-activo__detalle">
+                <span th:text="${portafolioActivo.nombre()}">Mi portafolio</span>
+                <span class="saldo-activo__fecha">
+                    <svg th:replace="~{fragments/iconos :: reloj}"></svg>
+                    <span th:text="${@formatos.fecha(portafolioActivo.fechaActual())}">02/01/2020</span>
+                </span>
+            </span>
+            <strong th:text="${@formatos.dinero(portafolioActivo.efectivo())}">US$ 10.000,00</strong>
+        </a>
+        <a th:if="${portafolioActivo == null}" class="boton boton--contorno" th:href="@{/portafolios/nuevo}">
+            <svg th:replace="~{fragments/iconos :: mas}"></svg>
+            <span>Crear portafolio</span>
+        </a>
+        <span class="superior__correo" sec:authentication="name">correo</span>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="boton boton--contorno">
+                <svg th:replace="~{fragments/iconos :: salir}"></svg>
+                <span>Cerrar sesión</span>
+            </button>
+        </form>
+    </div>
+</header>
+
+<!--/* Pestañas internas de un portafolio. activa: 'resumen', 'rendimiento', 'transacciones' o 'ahorro'. */-->
+<nav th:fragment="subnav(id, activa)" class="subnav" aria-label="Secciones del portafolio">
+    <a th:href="@{/portafolios/{id}(id=${id})}" th:classappend="${activa == 'resumen'} ? 'activo'"
+       th:attr="aria-current=${activa == 'resumen'} ? 'page' : null">Resumen</a>
+    <a th:href="@{/portafolios/{id}/rendimiento(id=${id})}" th:classappend="${activa == 'rendimiento'} ? 'activo'"
+       th:attr="aria-current=${activa == 'rendimiento'} ? 'page' : null">Rendimiento</a>
+    <a th:href="@{/portafolios/{id}/transacciones(id=${id})}" th:classappend="${activa == 'transacciones'} ? 'activo'"
+       th:attr="aria-current=${activa == 'transacciones'} ? 'page' : null">Transacciones</a>
+    <a th:href="@{/portafolios/{id}/ahorro(id=${id})}" th:classappend="${activa == 'ahorro'} ? 'activo'"
+       th:attr="aria-current=${activa == 'ahorro'} ? 'page' : null">Cuenta de ahorro</a>
+</nav>
+
+<!--/* Mensajes de una sola vez (flash) tras una acción. */-->
+<div th:fragment="avisos" class="avisos" th:if="${mensajeExito != null or mensajeError != null}" aria-live="polite">
+    <p class="aviso exito" th:if="${mensajeExito != null}" th:text="${mensajeExito}">Hecho.</p>
+    <p class="aviso error" th:if="${mensajeError != null}" th:text="${mensajeError}">Error.</p>
+</div>
+
+<footer th:fragment="pie" class="pie">
+    <span>Simulación educativa con datos históricos. Sin dinero real y sin recomendaciones de inversión.</span>
+    <span class="pie__estado"><span class="punto-estado" aria-hidden="true"></span>Datos precargados · funciona sin conexión</span>
+</footer>
+
+</body>
+</html>

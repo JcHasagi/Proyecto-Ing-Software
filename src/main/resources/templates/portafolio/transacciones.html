@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Transacciones')}"></head>
+<body class="app" th:with="h=${historial}, p=${historial.portafolio()}, filtro=${historial.filtro()}">
+<aside th:replace="~{fragments/plantilla :: lateral('portafolio')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${p.nombre}, 'Transacciones', null, 'portafolio')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Historial de transacciones</h1>
+            <p class="nota">El registro oficial del portafolio: el efectivo, las posiciones y el ahorro se calculan a
+                partir de estas filas, que nunca se modifican.</p>
+        </div>
+    </div>
+
+    <nav th:replace="~{fragments/plantilla :: subnav(${p.id}, 'transacciones')}"></nav>
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+    <section class="panel">
+        <form th:action="@{/portafolios/{id}/transacciones(id=${p.id})}" method="get" class="filtros-historial">
+            <div>
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo">
+                    <option value="">Todos</option>
+                    <option th:each="tipo : ${tipos}" th:value="${tipo.name()}" th:text="${tipo.etiqueta}"
+                            th:selected="${tipo == filtro.tipo()}">Tipo</option>
+                </select>
+            </div>
+            <div>
+                <label for="simbolo">Instrumento</label>
+                <select id="simbolo" name="simbolo">
+                    <option value="">Todos</option>
+                    <option th:each="simbolo : ${h.simbolosOperados()}" th:value="${simbolo}" th:text="${simbolo}"
+                            th:selected="${simbolo == filtro.simbolo()}">AAPL</option>
+                </select>
+            </div>
+            <div>
+                <label for="desde">Desde</label>
+                <input id="desde" name="desde" type="date" th:value="${filtro.desde()}"
+                       th:attr="min=${p.fechaInicioSim}, max=${p.fechaActualSim}">
+            </div>
+            <div>
+                <label for="hasta">Hasta</label>
+                <input id="hasta" name="hasta" type="date" th:value="${filtro.hasta()}"
+                       th:attr="min=${p.fechaInicioSim}, max=${p.fechaActualSim}">
+            </div>
+            <div class="filtros-historial__acciones">
+                <button type="submit" class="boton">Filtrar</button>
+                <a th:if="${filtro.estaActivo()}" class="boton boton--contorno"
+                   th:href="@{/portafolios/{id}/transacciones(id=${p.id})}">Quitar filtros</a>
+            </div>
+        </form>
+
+        <p class="nota" th:text="|Mostrando ${#lists.size(h.transacciones())} de ${h.totalDelPortafolio()} transacciones.|">
+            Mostrando 0 de 0.</p>
+
+        <p th:if="${#lists.isEmpty(h.transacciones())}" class="vacio">No hay transacciones con ese filtro.</p>
+
+        <div class="tabla-desplazable" th:unless="${#lists.isEmpty(h.transacciones())}">
+            <table class="tabla">
+                <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Instrumento</th>
+                    <th scope="col" class="numero">Cantidad</th>
+                    <th scope="col" class="numero">Precio</th>
+                    <th scope="col" class="numero">Efectivo</th>
+                    <th scope="col" class="numero">Ahorro</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${h.transacciones()}" th:with="tipo=${t.tipo}">
+                    <td th:text="${@formatos.fecha(t.fechaSim)}">fecha</td>
+                    <td><span class="tipo-transaccion" th:classappend="|tipo-transaccion--${tipo.name()}|"
+                              th:text="${tipo.etiqueta}">Compra</span></td>
+                    <td th:text="${t.instrumento != null ? t.instrumento.simbolo : '—'}">AAPL</td>
+                    <td class="numero" th:text="${t.cantidad != null ? @formatos.entero(t.cantidad) : '—'}">—</td>
+                    <td class="numero tenue" th:text="${@formatos.precio(t.precioEjecucion)}">—</td>
+                    <td class="numero" th:classappend="${tipo.signoEfectivo > 0} ? 'positivo' : (${tipo.signoEfectivo < 0} ? 'negativo' : 'tenue')"
+                        th:text="${tipo.signoEfectivo == 0} ? '—' : |${tipo.signoEfectivo > 0 ? '+' : '−'}${@formatos.dinero(t.monto)}|">0</td>
+                    <td class="numero" th:classappend="${tipo.signoAhorro > 0} ? 'positivo' : (${tipo.signoAhorro < 0} ? 'negativo' : 'tenue')"
+                        th:text="${tipo.signoAhorro == 0} ? '—' : |${tipo.signoAhorro > 0 ? '+' : '−'}${@formatos.dinero(t.monto)}|">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

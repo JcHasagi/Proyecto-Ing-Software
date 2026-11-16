@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera(${instrumentoId == null} ? 'Nuevo instrumento' : 'Editar instrumento')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('instrumentos')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Instrumentos', 'Administración', null, 'instrumentos')}"></header>
+
+<main class="contenido">
+    <section class="panel mensaje-confirmacion">
+        <h1 th:text="${instrumentoId == null} ? 'Nuevo instrumento' : 'Editar instrumento'">Instrumento</h1>
+        <p class="nota">Los precios se agregan después, desde la carga de históricos.</p>
+
+        <form th:action="${instrumentoId == null} ? @{/admin/instrumentos} : @{/admin/instrumentos/{id}(id=${instrumentoId})}"
+              th:object="${formulario}" method="post" class="formulario" novalidate>
+            <p class="aviso error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+               th:text="${error}">Error</p>
+
+            <label for="simbolo">Símbolo</label>
+            <input id="simbolo" type="text" th:field="*{simbolo}" maxlength="20" required>
+            <span class="ayuda">Se guarda en mayúsculas. Debe ser único; la carga de históricos lo usa para identificar el archivo.</span>
+            <span class="error-campo" th:if="${#fields.hasErrors('simbolo')}" th:errors="*{simbolo}">Error</span>
+
+            <label for="nombre">Nombre</label>
+            <input id="nombre" type="text" th:field="*{nombre}" maxlength="120" required>
+            <span class="error-campo" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</span>
+
+            <label for="tipo">Tipo</label>
+            <select id="tipo" th:field="*{tipo}" required>
+                <option value="">Elige un tipo</option>
+                <option th:each="tipo : ${tipos}" th:value="${tipo.name()}" th:text="${tipo.etiqueta}">Acción</option>
+            </select>
+            <span class="error-campo" th:if="${#fields.hasErrors('tipo')}" th:errors="*{tipo}">Error</span>
+
+            <label for="sector">Sector (opcional)</label>
+            <input id="sector" type="text" th:field="*{sector}" maxlength="80">
+            <span class="error-campo" th:if="${#fields.hasErrors('sector')}" th:errors="*{sector}">Error</span>
+
+            <div class="acciones">
+                <button type="submit" class="boton">Guardar</button>
+                <a class="boton boton--contorno" th:href="@{/admin/instrumentos}">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

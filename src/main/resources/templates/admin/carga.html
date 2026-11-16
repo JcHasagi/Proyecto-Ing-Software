@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Carga de históricos')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('carga')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Carga de históricos', 'Administración', null, 'carga')}"></header>
+
+<main class="contenido">
+    <div class="carga">
+        <section class="panel">
+            <div class="panel__cabecera">
+                <div>
+                    <h1>Carga masiva de históricos</h1>
+                    <p class="nota">Un archivo CSV por instrumento con su histórico diario.</p>
+                </div>
+            </div>
+
+            <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+            <!-- Paso 1 rechazado: el archivo no pasó la validación. -->
+            <div th:if="${validacion != null and !validacion.aceptada()}" class="aviso error" aria-live="polite">
+                <p>El archivo no pasó la validación y no se guardó nada. Corrígelo y vuelve a intentarlo.</p>
+                <ul class="errores">
+                    <li th:each="error : ${validacion.errores()}" th:text="${error}">Error</li>
+                </ul>
+            </div>
+
+            <!-- "detalle" es la validación que espera confirmación, el resultado ya guardado o la validación sin filas nuevas. -->
+            <th:block th:with="detalle=${pendiente != null ? pendiente.validacion() : (resultado != null ? resultado : validacion)}">
+                <div th:if="${detalle != null and detalle.aceptada()}" class="resultado" aria-live="polite">
+
+                    <!-- Paso 1 aceptado: resumen de la validación, a la espera de la confirmación. -->
+                    <section th:if="${pendiente != null}" class="validacion" aria-labelledby="titulo-validacion">
+                        <h2 id="titulo-validacion">
+                            Resumen de la validación de <span th:text="${detalle.simbolo()}">AAPL</span>
+                        </h2>
+                        <p>El archivo es válido. <strong>Todavía no se ha guardado nada:</strong>
+                            revisa el resumen y confirma la carga.</p>
+                        <dl class="resumen__datos">
+                            <div><dt>Filas leídas</dt><dd th:text="${detalle.filasLeidas()}">0</dd></div>
+                            <div><dt>Filas nuevas por guardar</dt><dd th:text="${detalle.cantidadDeFilasNuevas()}">0</dd></div>
+                            <div><dt>Fechas que ya estaban cargadas</dt><dd th:text="${#lists.size(detalle.fechasOmitidas())}">0</dd></div>
+                        </dl>
+                    </section>
+
+                    <!-- Paso 2 hecho: la carga ya se guardó. -->
+                    <p th:if="${pendiente == null and resultado != null}" class="aviso exito">
+                        Carga completada para <strong th:text="${resultado.simbolo()}">AAPL</strong>:
+                        <span th:text="${resultado.filasInsertadas()}">0</span> filas nuevas de
+                        <span th:text="${resultado.filasLeidas()}">0</span> leídas.
+                    </p>
+
+                    <!-- Archivo válido sin nada nuevo: no hay nada que confirmar. -->
+                    <p th:if="${pendiente == null and resultado == null}" class="aviso">
+                        El archivo de <strong th:text="${detalle.simbolo()}">AAPL</strong> es válido, pero todas sus
+                        fechas ya estaban cargadas: no hay nada que guardar.
+                    </p>
+
+                    <p th:unless="${#lists.isEmpty(detalle.fechasOmitidas())}" class="aviso"
+                       th:with="omitidas=${#lists.size(detalle.fechasOmitidas())}">
+                        <span th:if="${omitidas == 1}"
+                              th:text="|${pendiente != null ? 'Se omitirá' : 'Se omitió'} 1 fecha que ya estaba cargada (no se sobrescribe):|">Se omitió 1 fecha</span>
+                        <span th:if="${omitidas > 1}"
+                              th:text="|${pendiente != null ? 'Se omitirán' : 'Se omitieron'} ${omitidas} fechas que ya estaban cargadas (no se sobrescriben):|">Se omitieron 2 fechas</span>
+                        <th:block th:each="fecha, estado : ${detalle.fechasOmitidas()}" th:if="${estado.index < 20}">
+                            <span th:text="${fecha}">2024-01-01</span><span th:unless="${estado.last}">, </span>
+                        </th:block>
+                        <span th:if="${#lists.size(detalle.fechasOmitidas()) > 20}">…</span>
+                    </p>
+                    <div th:unless="${#lists.isEmpty(detalle.advertencias())}" class="aviso">
+                        <p th:if="${pendiente != null}">Huecos en la serie: esas fechas no tendrán precio y no serán
+                            días bursátiles para el instrumento. Puedes continuar o cancelar.</p>
+                        <p th:if="${pendiente == null}">Huecos en la serie (se tratan como días sin cotización):</p>
+                        <ul>
+                            <li th:each="advertencia : ${detalle.advertencias()}" th:text="${advertencia}">Hueco</li>
+                        </ul>
+                    </div>
+
+                    <div th:if="${pendiente != null}" class="acciones validacion__acciones">
+                        <form th:action="@{/admin/carga/confirmacion}" method="post" class="en-linea">
+                            <input type="hidden" name="codigo" th:value="${pendiente.codigo()}">
+                            <button type="submit" class="boton">Confirmar y guardar</button>
+                        </form>
+                        <form th:action="@{/admin/carga/cancelacion}" method="post" class="en-linea">
+                            <button type="submit" class="boton boton--contorno">Cancelar</button>
+                        </form>
+                    </div>
+                </div>
+            </th:block>
+
+            <form th:action="@{/admin/carga}" method="post" enctype="multipart/form-data" class="formulario">
+                <label for="simbolo">Instrumento</label>
+                <select id="simbolo" name="simbolo" required>
+                    <option th:each="instrumento : ${instrumentos}" th:value="${instrumento.simbolo}"
+                            th:text="|${instrumento.simbolo} · ${instrumento.nombre} (${instrumento.tipo.etiqueta})|"
+                            th:selected="${instrumento.simbolo == simboloSeleccionado}">AAPL</option>
+                </select>
+
+                <label for="archivo">Archivo CSV</label>
+                <input id="archivo" name="archivo" type="file" accept=".csv,text/csv" required>
+
+                <button type="submit" class="boton">
+                    <svg th:replace="~{fragments/iconos :: carga}"></svg>
+                    <span>Validar archivo</span>
+                </button>
+            </form>
+        </section>
+
+        <aside class="panel panel--ayuda" aria-labelledby="titulo-formato">
+            <h2 id="titulo-formato">Formato del archivo</h2>
+            <ul>
+                <li>Primera línea: encabezado con <code>fecha, apertura, maximo, minimo, cierre</code> y, opcional,
+                    <code>volumen</code>. También sirven los nombres en inglés de Stooq y yfinance
+                    (<code>Date, Open, High, Low, Close, Volume</code>). Otras columnas se ignoran.</li>
+                <li>Separador coma o punto y coma, punto decimal sin separador de miles y fechas <code>AAAA-MM-DD</code>.</li>
+                <li>Precios por unidad en USD (en divisas, USD por 1 unidad de la divisa). Se guardan con 8 decimales.</li>
+                <li>Primero se valida el archivo y se muestra un resumen. Los precios se guardan solo cuando
+                    confirmas la carga.</li>
+                <li>Si una fila es inválida o una fecha se repite en el archivo, se rechaza completo.</li>
+                <li>Las fechas que ya existen para el instrumento se omiten y se informan.</li>
+            </ul>
+            <pre>Date,Open,High,Low,Close,Volume
+2024-03-01,100.00,102.50,99.10,101.75,1250000</pre>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

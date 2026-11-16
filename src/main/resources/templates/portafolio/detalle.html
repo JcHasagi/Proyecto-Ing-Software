@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera(${resumen.portafolio().nombre})}"></head>
+<body class="app" th:with="p=${resumen.portafolio()}">
+<aside th:replace="~{fragments/plantilla :: lateral('portafolio')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${p.nombre}, 'Portafolio', null, 'portafolio')}"></header>
+
+<main class="contenido">
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+    <div class="cabecera-pagina">
+        <div>
+            <h1 th:text="${p.nombre}">Mi portafolio</h1>
+            <p class="nota">
+                <span class="estado" th:classappend="|estado--${p.estado.name()}|" th:text="${p.estado.etiqueta}">En curso</span>
+                · Empezó el <span th:text="${@formatos.fecha(p.fechaInicioSim)}">02/01/2020</span>
+                con <span th:text="${@formatos.dinero(p.saldoInicial)}">US$ 10.000,00</span>
+                <th:block th:if="${resumen.escenario() != null}">
+                    · Escenario: <strong th:text="${resumen.escenario().nombre}">Crisis</strong>, termina el
+                    <span th:text="${@formatos.fecha(resumen.escenario().fechaFin)}">fecha</span>
+                </th:block>
+            </p>
+        </div>
+        <div class="acciones">
+            <a th:if="${p.admiteOperaciones()}" class="boton" th:href="@{/catalogo}">
+                <svg th:replace="~{fragments/iconos :: catalogo}"></svg>
+                <span>Operar desde el catálogo</span>
+            </a>
+            <a th:if="${p.estado.name() != 'ARCHIVADO'}" class="boton boton--peligro"
+               th:href="@{/portafolios/{id}/reinicio(id=${p.id})}">Reiniciar</a>
+        </div>
+    </div>
+
+    <nav th:replace="~{fragments/plantilla :: subnav(${p.id}, 'resumen')}"></nav>
+
+    <section th:if="${avance != null}" class="panel panel--avance" aria-labelledby="titulo-avance">
+        <h2 id="titulo-avance">
+            Reloj avanzado al <span th:text="${@formatos.fecha(avance.hasta())}">fecha</span>
+        </h2>
+        <p class="nota">
+            Se procesaron <span th:text="${avance.diasBursatiles()}">0</span> días bursátiles desde el
+            <span th:text="${@formatos.fecha(avance.desde())}">fecha</span>. Valor del portafolio:
+            <strong th:text="${@formatos.dinero(avance.valorTotal())}">US$ 0</strong>; efectivo:
+            <span th:text="${@formatos.dinero(avance.efectivo())}">US$ 0</span><th:block
+                th:if="${avance.interesesGanados().signum() > 0}">; intereses de ahorro:
+            <span class="positivo" th:text="${@formatos.dinero(avance.interesesGanados())}">US$ 0</span></th:block>.
+        </p>
+        <p th:if="${avance.finalizado()}" class="aviso">
+            El reloj llegó a su fecha final<span th:if="${resumen.escenario() != null}"> (fin del escenario)</span>:
+            el portafolio quedó finalizado y solo admite consultas o reinicio.
+        </p>
+        <p th:if="${#lists.isEmpty(avance.ejecutadas()) and #lists.isEmpty(avance.rechazadas()) and #lists.isEmpty(avance.canceladas())}"
+           class="nota">No había órdenes pendientes por ejecutar.</p>
+
+        <div class="tabla-desplazable" th:unless="${#lists.isEmpty(avance.ejecutadas())}">
+            <table class="tabla">
+                <caption class="etiqueta">Órdenes ejecutadas</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Orden</th>
+                    <th scope="col" class="numero">Precio de cierre</th>
+                    <th scope="col" class="numero">Monto</th>
+                    <th scope="col" class="numero">Comisión</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="orden : ${avance.ejecutadas()}">
+                    <td th:text="${@formatos.fecha(orden.fecha())}">fecha</td>
+                    <td>
+                        <span class="tipo-orden" th:classappend="|tipo-orden--${orden.tipo().name()}|"
+                              th:text="${orden.tipo().etiqueta}">Compra</span>
+                        <span th:text="|${@formatos.entero(orden.cantidad())} ${orden.simbolo()}|">10 AAPL</span>
+                    </td>
+                    <td class="numero" th:text="${@formatos.precio(orden.precio())}">0</td>
+                    <td class="numero" th:text="${@formatos.dinero(orden.monto())}">0</td>
+                    <td class="numero tenue" th:text="${@formatos.dinero(orden.comision())}">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <ul class="lista-motivos" th:unless="${#lists.isEmpty(avance.rechazadas()) and #lists.isEmpty(avance.canceladas())}">
+            <li th:each="orden : ${avance.rechazadas()}">
+                <span class="estado estado--RECHAZADA">Rechazada</span>
+                <span th:text="|${orden.tipo().etiqueta} de ${@formatos.entero(orden.cantidad())} ${orden.simbolo()}:|">Compra</span>
+                <span class="tenue" th:text="${orden.motivo()}">motivo</span>
+            </li>
+            <li th:each="orden : ${avance.canceladas()}">
+                <span class="estado estado--CANCELADA">Cancelada</span>
+                <span th:text="|${orden.tipo().etiqueta} de ${@formatos.entero(orden.cantidad())} ${orden.simbolo()}:|">Compra</span>
+                <span class="tenue" th:text="${orden.motivo()}">motivo</span>
+            </li>
+        </ul>
+    </section>
+
+    <div class="tarjetas">
+        <div class="tarjeta">
+            <span class="etiqueta">Valor total</span>
+            <strong class="cifra-grande" th:text="${@formatos.dinero(resumen.valorTotal())}">US$ 10.000,00</strong>
+            <span class="nota" th:classappend="${resumen.tendencia()}"
+                  th:text="|${@formatos.porcentaje(resumen.variacionPorcentual())} frente al saldo inicial|">0,00 %</span>
+        </div>
+        <div class="tarjeta">
+            <span class="etiqueta">Efectivo</span>
+            <strong class="cifra" th:text="${@formatos.dinero(resumen.efectivo())}">US$ 10.000,00</strong>
+            <span class="nota">Calculado desde las transacciones</span>
+        </div>
+        <div class="tarjeta">
+            <span class="etiqueta">Valor de las posiciones</span>
+            <strong class="cifra" th:text="${@formatos.dinero(resumen.valorPosiciones())}">US$ 0,00</strong>
+            <span class="nota" th:with="cantidad=${#lists.size(resumen.posiciones())}"
+                  th:text="${cantidad == 1} ? '1 instrumento' : |${cantidad} instrumentos|">0 instrumentos</span>
+        </div>
+        <a class="tarjeta tarjeta--enlace" th:href="@{/portafolios/{id}/ahorro(id=${p.id})}">
+            <span class="etiqueta">Cuenta de ahorro</span>
+            <strong class="cifra" th:text="${@formatos.dinero(resumen.saldoAhorro())}">US$ 0,00</strong>
+            <span class="nota" th:text="${resumen.tieneCuentaAhorro()} ? 'Genera intereses al avanzar el reloj' : 'Todavía no la abres'">nota</span>
+        </a>
+    </div>
+
+    <div class="portafolio-cuerpo">
+        <section class="panel" aria-labelledby="titulo-posiciones">
+            <h2 id="titulo-posiciones">Posiciones</h2>
+            <p th:if="${#lists.isEmpty(resumen.posiciones())}" class="vacio">
+                Todavía no tienes posiciones. Elige un instrumento en el
+                <a th:href="@{/catalogo}">catálogo</a> para comprar.
+            </p>
+            <div class="tabla-desplazable" th:unless="${#lists.isEmpty(resumen.posiciones())}">
+                <table class="tabla">
+                    <thead>
+                    <tr>
+                        <th scope="col">Instrumento</th>
+                        <th scope="col" class="numero">Cantidad</th>
+                        <th scope="col" class="numero">Costo base</th>
+                        <th scope="col" class="numero">Último cierre</th>
+                        <th scope="col" class="numero">Valor</th>
+                        <th scope="col" class="numero">Ganancia no realizada</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="fila : ${resumen.posiciones()}" th:with="instrumento=${fila.posicion().instrumento()}">
+                        <td>
+                            <a class="instrumento" th:href="@{/catalogo/{simbolo}(simbolo=${instrumento.simbolo})}">
+                                <span class="icono-instrumento"
+                                      th:classappend="|icono-instrumento--${instrumento.tipo.name()}|"
+                                      th:text="${instrumento.iniciales}"
+                                      aria-hidden="true">AA</span>
+                                <span class="instrumento__texto">
+                                    <strong th:text="${instrumento.simbolo}">AAPL</strong>
+                                    <small th:text="${instrumento.nombre}">Nombre</small>
+                                </span>
+                            </a>
+                        </td>
+                        <td class="numero" th:text="${@formatos.entero(fila.posicion().cantidad())}">0</td>
+                        <td class="numero tenue" th:text="${@formatos.precio(fila.posicion().costoBaseUnitario())}">0</td>
+                        <td class="numero" th:text="${@formatos.precio(fila.precioActual())}">0</td>
+                        <td class="numero precio" th:text="${@formatos.dinero(fila.valorMercado())}">0</td>
+                        <td class="numero" th:classappend="${fila.tendencia()}"
+                            th:text="${@formatos.dinero(fila.gananciaNoRealizada())}">0</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel panel--reloj" aria-labelledby="titulo-reloj">
+            <h2 id="titulo-reloj">Reloj de simulación</h2>
+            <span class="etiqueta">Fecha simulada</span>
+            <strong class="cifra-grande cifra-grande--neutra" th:text="${@formatos.fecha(p.fechaActualSim)}">02/01/2020</strong>
+            <span class="nota">
+                <span th:text="${resumen.escenario() != null} ? 'Fin del escenario:' : 'Último dato del histórico:'">Último dato:</span>
+                <span th:text="${@formatos.fecha(resumen.fechaLimiteDelReloj())}">14/11/2026</span></span>
+
+            <th:block th:if="${p.admiteOperaciones()}">
+                <form th:action="@{/portafolios/{id}/reloj(id=${p.id})}" method="post" class="saltos">
+                    <button type="submit" name="salto" value="DIA" class="boton boton--contorno boton--chico">Siguiente día</button>
+                    <button type="submit" name="salto" value="SEMANA" class="boton boton--contorno boton--chico">+1 semana</button>
+                    <button type="submit" name="salto" value="MES" class="boton boton--contorno boton--chico">+1 mes</button>
+                </form>
+                <form th:action="@{/portafolios/{id}/reloj(id=${p.id})}" method="post" class="formulario">
+                    <label for="fecha">Avanzar hasta</label>
+                    <input id="fecha" name="fecha" type="date" required
+                           th:attr="min=${p.fechaActualSim.plusDays(1)}, max=${resumen.fechaLimiteDelReloj()}">
+                    <button type="submit" class="boton">
+                        <svg th:replace="~{fragments/iconos :: reloj}"></svg>
+                        <span>Avanzar reloj</span>
+                    </button>
+                </form>
+                <p class="nota">En cada día bursátil se ejecutan las órdenes pendientes al precio de cierre y se guarda
+                    el valor del portafolio. El reloj no puede retroceder.</p>
+            </th:block>
+            <p th:unless="${p.admiteOperaciones()}" class="aviso">
+                Este portafolio está <span th:text="${#strings.toLowerCase(p.estado.etiqueta)}">finalizado</span>:
+                solo permite consultas.
+            </p>
+        </section>
+    </div>
+
+    <section class="panel" aria-labelledby="titulo-pendientes">
+        <h2 id="titulo-pendientes">Órdenes pendientes</h2>
+        <p th:if="${#lists.isEmpty(resumen.ordenesPendientes())}" class="nota">No hay órdenes pendientes.</p>
+        <div class="tabla-desplazable" th:unless="${#lists.isEmpty(resumen.ordenesPendientes())}">
+            <table class="tabla">
+                <thead>
+                <tr>
+                    <th scope="col">Emitida</th>
+                    <th scope="col">Orden</th>
+                    <th scope="col" class="numero">Cantidad</th>
+                    <th scope="col">Ejecución</th>
+                    <th scope="col"><span class="solo-lector">Acciones</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="orden : ${resumen.ordenesPendientes()}">
+                    <td th:text="${@formatos.fecha(orden.fechaEmisionSim)}">fecha</td>
+                    <td>
+                        <span class="tipo-orden" th:classappend="|tipo-orden--${orden.tipo.name()}|"
+                              th:text="${orden.tipo.etiqueta}">Compra</span>
+                        <a th:href="@{/catalogo/{simbolo}(simbolo=${orden.instrumento.simbolo})}"
+                           th:text="${orden.instrumento.simbolo}">AAPL</a>
+                    </td>
+                    <td class="numero" th:text="${@formatos.entero(orden.cantidad)}">0</td>
+                    <td class="tenue">Al cierre del siguiente día bursátil</td>
+                    <td class="numero">
+                        <form th:action="@{/portafolios/{id}/ordenes/{orden}/cancelar(id=${p.id}, orden=${orden.id})}"
+                              method="post" class="en-linea">
+                            <button type="submit" class="boton boton--peligro boton--chico">Cancelar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel" aria-labelledby="titulo-recientes" th:unless="${#lists.isEmpty(resumen.ordenesRecientes())}">
+        <h2 id="titulo-recientes">Órdenes recientes</h2>
+        <div class="tabla-desplazable">
+            <table class="tabla">
+                <thead>
+                <tr>
+                    <th scope="col">Emitida</th>
+                    <th scope="col">Orden</th>
+                    <th scope="col" class="numero">Cantidad</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Detalle</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="orden : ${resumen.ordenesRecientes()}">
+                    <td th:text="${@formatos.fecha(orden.fechaEmisionSim)}">fecha</td>
+                    <td>
+                        <span class="tipo-orden" th:classappend="|tipo-orden--${orden.tipo.name()}|"
+                              th:text="${orden.tipo.etiqueta}">Compra</span>
+                        <span th:text="${orden.instrumento.simbolo}">AAPL</span>
+                    </td>
+                    <td class="numero" th:text="${@formatos.entero(orden.cantidad)}">0</td>
+                    <td><span class="estado" th:classappend="|estado--${orden.estado.name()}|"
+                              th:text="${orden.estado.etiqueta}">Ejecutada</span></td>
+                    <td class="tenue celda-ajustable"
+                        th:text="${orden.motivo != null ? orden.motivo : 'El ' + @formatos.fecha(orden.fechaResolucionSim)}">detalle</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

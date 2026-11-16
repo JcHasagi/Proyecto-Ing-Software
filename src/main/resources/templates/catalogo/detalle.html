@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera(${detalle.instrumento().simbolo()})}"></head>
+<body class="app" th:with="instrumento=${detalle.instrumento()}, simbolo=${detalle.instrumento().simbolo()}">
+<aside th:replace="~{fragments/plantilla :: lateral('catalogo')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${simbolo}, ${instrumento.tipo().etiqueta}, ${instrumento.iniciales()}, ${instrumento.tipo().name()})}"></header>
+
+<main class="contenido">
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+    <div class="detalle">
+        <section class="panel panel--grafico" aria-labelledby="titulo-instrumento">
+            <div class="encabezado-instrumento">
+                <span class="icono-instrumento icono-instrumento--grande"
+                      th:classappend="|icono-instrumento--${instrumento.tipo().name()}|"
+                      th:text="${instrumento.iniciales()}" aria-hidden="true">AA</span>
+                <div>
+                    <h1 id="titulo-instrumento">
+                        <span th:text="${simbolo}">AAPL</span>
+                        <small th:text="${instrumento.nombre()}">Nombre</small>
+                    </h1>
+                    <p class="nota">
+                        <span th:text="${instrumento.tipo().etiqueta}">Acción</span><span
+                            th:if="${instrumento.sector() != null}" th:text="| · ${instrumento.sector()}|"></span>
+                        · USD por unidad
+                    </p>
+                </div>
+            </div>
+
+            <p th:unless="${instrumento.activo()}" class="aviso">
+                Este instrumento está deshabilitado: no aparece en el catálogo ni admite compras. Si tienes unidades,
+                puedes venderlas.
+            </p>
+
+            <div class="grafico">
+                <nav class="segmentos segmentos--flotante" aria-label="Rango del histórico">
+                    <a th:each="rango : ${rangos}"
+                       th:href="@{/catalogo/{simbolo}(simbolo=${simbolo}, rango=${rango.name()})}"
+                       th:text="${rango.etiquetaCorta}" th:title="${rango.etiqueta}"
+                       th:classappend="${rango == detalle.rango()} ? 'activo'"
+                       th:attr="aria-current=${rango == detalle.rango()} ? 'page' : null">1A</a>
+                </nav>
+
+                <div class="zoom" role="group" aria-label="Acercar o alejar">
+                    <a th:href="@{/catalogo/{simbolo}(simbolo=${simbolo}, rango=${detalle.rango().masAmplio().name()})}"
+                       th:classappend="${detalle.rango().masAmplio() == detalle.rango()} ? 'deshabilitado'"
+                       th:attr="aria-disabled=${detalle.rango().masAmplio() == detalle.rango()} ? 'true' : null"
+                       aria-label="Alejar (rango más amplio)" title="Alejar">
+                        <svg th:replace="~{fragments/iconos :: menos}"></svg>
+                    </a>
+                    <a th:href="@{/catalogo/{simbolo}(simbolo=${simbolo}, rango='UN_ANIO')}"
+                       aria-label="Volver al rango de 1 año" title="Rango predeterminado">
+                        <svg th:replace="~{fragments/iconos :: centrar}"></svg>
+                    </a>
+                    <a th:href="@{/catalogo/{simbolo}(simbolo=${simbolo}, rango=${detalle.rango().masCorto().name()})}"
+                       th:classappend="${detalle.rango().masCorto() == detalle.rango()} ? 'deshabilitado'"
+                       th:attr="aria-disabled=${detalle.rango().masCorto() == detalle.rango()} ? 'true' : null"
+                       aria-label="Acercar (rango más corto)" title="Acercar">
+                        <svg th:replace="~{fragments/iconos :: mas}"></svg>
+                    </a>
+                </div>
+
+                <canvas th:if="${detalle.tieneDatos()}" id="grafico-historico" role="img"
+                        th:attr="aria-label=|Precio de cierre de ${simbolo}, ${detalle.rango().etiqueta}|"></canvas>
+
+                <div th:unless="${detalle.tieneDatos()}" class="grafico__vacio">
+                    <p>No hay precios en este rango.</p>
+                    <p class="nota" th:if="${instrumento.ultimoCierre() != null}">
+                        El último cierre disponible es del
+                        <span th:text="${@formatos.fecha(instrumento.ultimoCierre().fecha())}">fecha</span>.
+                        Prueba con un rango más amplio.
+                    </p>
+                    <p class="nota" th:if="${instrumento.ultimoCierre() == null}">
+                        Este instrumento aún no tiene histórico cargado.
+                    </p>
+                </div>
+            </div>
+
+            <p th:if="${detalle.tieneDatos()}" id="grafico-detalle" class="grafico__lectura" aria-live="polite">
+                Pasa el cursor por el gráfico para ver cada cierre.
+            </p>
+        </section>
+
+        <div class="columna-lateral">
+        <section class="panel panel--operar" aria-labelledby="titulo-operar">
+            <h2 id="titulo-operar">Operar</h2>
+            <th:block th:if="${portafolioActivo == null}">
+                <p class="nota">Para comprar o vender necesitas un portafolio con su propio reloj.</p>
+                <a class="boton" th:href="@{/portafolios/nuevo}">Crear portafolio</a>
+            </th:block>
+
+            <th:block th:if="${portafolioActivo != null}">
+                <p class="nota">
+                    En <strong th:text="${portafolioActivo.nombre()}">Mi portafolio</strong>, al
+                    <span th:text="${@formatos.fecha(portafolioActivo.fechaActual())}">02/01/2020</span>
+                </p>
+                <dl class="resumen__datos">
+                    <div>
+                        <dt>Tu posición</dt>
+                        <dd th:text="${posicion == null ? '0' : @formatos.entero(posicion.cantidad())}">0</dd>
+                    </div>
+                    <div th:if="${posicion != null}">
+                        <dt>Costo base</dt>
+                        <dd th:text="${@formatos.precio(posicion.costoBaseUnitario())}">0</dd>
+                    </div>
+                    <div>
+                        <dt>Efectivo</dt>
+                        <dd th:text="${@formatos.dinero(portafolioActivo.efectivo())}">0</dd>
+                    </div>
+                </dl>
+
+                <p th:unless="${portafolioActivo.admiteOperaciones()}" class="aviso">
+                    El portafolio activo está <span th:text="${#strings.toLowerCase(portafolioActivo.estado().etiqueta)}">finalizado</span>:
+                    solo permite consultas.
+                </p>
+                <p th:if="${portafolioActivo.admiteOperaciones() and instrumento.ultimoCierre() == null}" class="aviso">
+                    Este instrumento no tiene precios a la fecha simulada; todavía no se puede operar.
+                </p>
+
+                <form th:if="${portafolioActivo.admiteOperaciones() and instrumento.ultimoCierre() != null}"
+                      th:action="@{/portafolios/{id}/ordenes/estimacion(id=${portafolioActivo.id()})}" method="post"
+                      class="formulario formulario--operar">
+                    <input type="hidden" name="simbolo" th:value="${simbolo}">
+                    <label for="cantidad">Cantidad</label>
+                    <div class="cantidad">
+                        <button type="button" class="paso" data-paso="-10" aria-label="Restar 10">−10</button>
+                        <button type="button" class="paso" data-paso="-1" aria-label="Restar 1">−1</button>
+                        <input id="cantidad" name="cantidad" type="number" min="1" step="1" inputmode="numeric" required
+                               th:value="${cantidadIngresada != null ? cantidadIngresada : 1}">
+                        <button type="button" class="paso" data-paso="1" aria-label="Sumar 1">+1</button>
+                        <button type="button" class="paso" data-paso="10" aria-label="Sumar 10">+10</button>
+                    </div>
+                    <p class="nota">
+                        Referencia: <span th:text="${@formatos.precio(instrumento.ultimoCierre().cierre())}">0</span> USD.
+                        La orden se ejecuta al cierre del siguiente día bursátil.
+                    </p>
+                    <div class="operar__botones">
+                        <button type="submit" name="tipo" value="COMPRA" class="boton"
+                                th:disabled="${!instrumento.activo()}">Comprar</button>
+                        <button type="submit" name="tipo" value="VENTA" class="boton boton--venta"
+                                th:disabled="${posicion == null}">Vender</button>
+                    </div>
+                </form>
+            </th:block>
+        </section>
+
+        <aside class="panel panel--resumen" aria-label="Resumen del rango">
+            <div class="resumen__principal">
+                <span class="etiqueta">Último cierre</span>
+                <strong class="cifra-grande"
+                        th:text="${instrumento.ultimoCierre() == null ? '—' : @formatos.precio(instrumento.ultimoCierre().cierre())}">0,00</strong>
+                <span class="nota" th:if="${instrumento.ultimoCierre() != null}"
+                      th:text="|USD · ${@formatos.fecha(instrumento.ultimoCierre().fecha())}|">USD</span>
+            </div>
+            <dl class="resumen__datos">
+                <div>
+                    <dt>Variación (<span th:text="${detalle.rango().etiqueta}">1 año</span>)</dt>
+                    <dd th:text="${@formatos.porcentaje(detalle.variacionPorcentual())}"
+                        th:classappend="${detalle.tendencia()}">0,00 %</dd>
+                </div>
+                <div>
+                    <dt>Máximo del rango</dt>
+                    <dd th:text="${@formatos.precio(detalle.maximoDelRango())}">0,00</dd>
+                </div>
+                <div>
+                    <dt>Mínimo del rango</dt>
+                    <dd th:text="${@formatos.precio(detalle.minimoDelRango())}">0,00</dd>
+                </div>
+                <div>
+                    <dt>Días con cierre</dt>
+                    <dd th:text="${#lists.size(detalle.serie())}">0</dd>
+                </div>
+                <div>
+                    <dt>Precios visibles hasta</dt>
+                    <dd th:text="${@formatos.fecha(detalle.hasta())}">fecha</dd>
+                </div>
+            </dl>
+        </aside>
+        </div>
+
+        <section th:if="${detalle.tieneDatos()}" class="panel panel--tabla" aria-labelledby="titulo-ultimos">
+            <h2 id="titulo-ultimos">Últimos días</h2>
+            <div class="tabla-desplazable">
+                <table class="tabla">
+                    <thead>
+                    <tr>
+                        <th scope="col">Fecha</th>
+                        <th scope="col" class="numero">Apertura</th>
+                        <th scope="col" class="numero">Máximo</th>
+                        <th scope="col" class="numero">Mínimo</th>
+                        <th scope="col" class="numero">Cierre</th>
+                        <th scope="col" class="numero">Volumen</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="precio : ${detalle.ultimosDias(30)}">
+                        <td th:text="${@formatos.fecha(precio.fecha())}">fecha</td>
+                        <td class="numero" th:text="${@formatos.precio(precio.apertura())}">0</td>
+                        <td class="numero" th:text="${@formatos.precio(precio.maximo())}">0</td>
+                        <td class="numero" th:text="${@formatos.precio(precio.minimo())}">0</td>
+                        <td class="numero precio" th:text="${@formatos.precio(precio.cierre())}">0</td>
+                        <td class="numero tenue" th:text="${@formatos.entero(precio.volumen())}">0</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <th:block th:if="${detalle.tieneDatos()}">
+        <script th:inline="javascript">
+            window.serieHistorico = {
+                fechas: /*[[${detalle.fechasGrafico()}]]*/ [],
+                cierres: /*[[${detalle.cierresGrafico()}]]*/ [],
+                volumenes: /*[[${detalle.volumenesGrafico()}]]*/ []
+            };
+        </script>
+        <script th:src="@{/js/grafico.js}"></script>
+    </th:block>
+    <script th:src="@{/js/operar.js}"></script>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

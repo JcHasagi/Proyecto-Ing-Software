@@ -1,0 +1,14 @@
+package co.edu.uis.siminversion;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+
+@SpringBootApplication
+@ConfigurationPropertiesScan
+public class SimInversionApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(SimInversionApplication.class, args);
+    }
+}

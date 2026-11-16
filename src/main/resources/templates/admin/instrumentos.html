@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Instrumentos')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('instrumentos')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Instrumentos', 'Administración', null, 'instrumentos')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Administración del catálogo</h1>
+            <p class="nota">Un instrumento deshabilitado deja de aparecer en el catálogo y no admite compras; quien ya lo
+                tenga conserva su posición y puede venderla.</p>
+        </div>
+        <div class="acciones">
+            <a class="boton" th:href="@{/admin/instrumentos/nuevo}">
+                <svg th:replace="~{fragments/iconos :: mas}"></svg>
+                <span>Nuevo instrumento</span>
+            </a>
+            <a class="boton boton--contorno" th:href="@{/admin/carga}">Cargar histórico</a>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+    <section class="panel">
+        <div class="tabla-desplazable">
+            <table class="tabla">
+                <thead>
+                <tr>
+                    <th scope="col">Instrumento</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col" class="numero">Días con precio</th>
+                    <th scope="col">Histórico</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col"><span class="solo-lector">Acciones</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="fila : ${filas}" th:with="i=${fila.instrumento()}, c=${fila.cobertura()}">
+                    <td>
+                        <span class="instrumento">
+                            <span class="icono-instrumento" th:classappend="|icono-instrumento--${i.tipo.name()}|"
+                                  th:text="${i.iniciales}" aria-hidden="true">AA</span>
+                            <span class="instrumento__texto">
+                                <strong th:text="${i.simbolo}">AAPL</strong>
+                                <small th:text="${i.nombre}">Nombre</small>
+                            </span>
+                        </span>
+                    </td>
+                    <td><span class="insignia" th:classappend="|insignia--${i.tipo.name()}|" th:text="${i.tipo.etiqueta}">Acción</span></td>
+                    <td class="tenue" th:text="${i.sector ?: '—'}">Sector</td>
+                    <td class="numero" th:text="${c == null ? '0' : @formatos.entero(c.dias())}">0</td>
+                    <td class="tenue"
+                        th:text="${c == null ? 'Sin precios' : @formatos.fecha(c.primeraFecha()) + ' – ' + @formatos.fecha(c.ultimaFecha())}">—</td>
+                    <td><span class="estado" th:classappend="${i.activo} ? 'estado--EN_CURSO' : 'estado--CANCELADA'"
+                              th:text="${i.activo} ? 'Habilitado' : 'Deshabilitado'">Habilitado</span></td>
+                    <td class="numero">
+                        <span class="acciones acciones--fila">
+                            <a class="boton boton--contorno boton--chico"
+                               th:href="@{/admin/instrumentos/{id}/editar(id=${i.id})}">Editar</a>
+                            <form th:action="@{/admin/instrumentos/{id}/estado(id=${i.id})}" method="post" class="en-linea">
+                                <input type="hidden" name="activo" th:value="${!i.activo}">
+                                <button type="submit" class="boton boton--chico"
+                                        th:classappend="${i.activo} ? 'boton--peligro' : 'boton--contorno'"
+                                        th:text="${i.activo} ? 'Deshabilitar' : 'Habilitar'">Deshabilitar</button>
+                            </form>
+                        </span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

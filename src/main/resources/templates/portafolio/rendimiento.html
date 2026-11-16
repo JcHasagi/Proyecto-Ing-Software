@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Rendimiento')}"></head>
+<body class="app" th:with="r=${rendimiento}, resumen=${rendimiento.resumen()}, p=${rendimiento.resumen().portafolio()}">
+<aside th:replace="~{fragments/plantilla :: lateral('portafolio')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${p.nombre}, 'Rendimiento', null, 'portafolio')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Rendimiento</h1>
+            <p class="nota">
+                <span th:text="${p.nombre}">Mi portafolio</span>, valorado al
+                <span th:text="${@formatos.fecha(p.fechaActualSim)}">fecha</span> con los cierres disponibles a esa fecha.
+            </p>
+        </div>
+    </div>
+
+    <nav th:replace="~{fragments/plantilla :: subnav(${p.id}, 'rendimiento')}"></nav>
+
+    <div class="tarjetas">
+        <div class="tarjeta">
+            <span class="etiqueta">Valor total</span>
+            <strong class="cifra-grande" th:text="${@formatos.dinero(resumen.valorTotal())}">US$ 0</strong>
+            <span class="nota">Efectivo + posiciones + ahorro</span>
+        </div>
+        <div class="tarjeta">
+            <span class="etiqueta">Rendimiento total</span>
+            <strong class="cifra" th:classappend="${resumen.tendencia()}"
+                    th:text="${@formatos.dinero(resumen.rendimiento())}">US$ 0</strong>
+            <span class="nota" th:classappend="${resumen.tendencia()}"
+                  th:text="|${@formatos.porcentaje(resumen.variacionPorcentual())} frente a ${@formatos.dinero(p.saldoInicial)}|">0 %</span>
+        </div>
+        <div class="tarjeta">
+            <span class="etiqueta">P&amp;L realizado</span>
+            <strong class="cifra" th:classappend="${r.tendenciaDe(r.gananciaRealizada())}"
+                    th:text="${@formatos.dinero(r.gananciaRealizada())}">US$ 0</strong>
+            <span class="nota">De las ventas ejecutadas</span>
+        </div>
+        <div class="tarjeta">
+            <span class="etiqueta">P&amp;L no realizado</span>
+            <strong class="cifra" th:classappend="${r.tendenciaDe(r.gananciaNoRealizada())}"
+                    th:text="${@formatos.dinero(r.gananciaNoRealizada())}">US$ 0</strong>
+            <span class="nota">De las posiciones abiertas</span>
+        </div>
+    </div>
+
+    <section class="panel" aria-labelledby="titulo-evolucion">
+        <div class="panel__cabecera">
+            <div>
+                <h2 id="titulo-evolucion">Evolución del valor</h2>
+                <p class="nota">Valor total al cierre de cada día bursátil simulado. La línea punteada gris es el saldo inicial.</p>
+            </div>
+        </div>
+        <div th:unless="${r.tieneEvolucion()}" class="grafico grafico--bajo">
+            <div class="grafico__vacio">
+                <p>El gráfico estará disponible después de avanzar el reloj.</p>
+                <a class="boton boton--contorno" th:href="@{/portafolios/{id}(id=${p.id})}">Ir al reloj</a>
+            </div>
+        </div>
+        <th:block th:if="${r.tieneEvolucion()}">
+            <div class="grafico grafico--bajo">
+                <canvas id="grafico-historico" role="img" aria-label="Evolución del valor total del portafolio"></canvas>
+            </div>
+            <p id="grafico-detalle" class="grafico__lectura" aria-live="polite">
+                Pasa el cursor por el gráfico para ver el valor de cada día.
+            </p>
+            <script th:inline="javascript">
+                window.serieHistorico = {
+                    fechas: /*[[${r.fechasGrafico()}]]*/ [],
+                    cierres: /*[[${r.valoresGrafico()}]]*/ [],
+                    volumenes: [],
+                    etiqueta: 'valor',
+                    referencia: /*[[${p.saldoInicial.toPlainString()}]]*/ null
+                };
+            </script>
+            <script th:src="@{/js/grafico.js}"></script>
+        </th:block>
+    </section>
+
+    <div class="portafolio-cuerpo">
+        <section class="panel" aria-labelledby="titulo-por-instrumento">
+            <h2 id="titulo-por-instrumento">P&amp;L por instrumento</h2>
+            <p th:if="${#lists.isEmpty(r.porInstrumento())}" class="vacio">Todavía no has operado ningún instrumento.</p>
+            <div class="tabla-desplazable" th:unless="${#lists.isEmpty(r.porInstrumento())}">
+                <table class="tabla">
+                    <thead>
+                    <tr>
+                        <th scope="col">Instrumento</th>
+                        <th scope="col" class="numero">En posición</th>
+                        <th scope="col" class="numero">Realizado</th>
+                        <th scope="col" class="numero">No realizado</th>
+                        <th scope="col" class="numero">Total</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="fila : ${r.porInstrumento()}" th:with="instrumento=${fila.instrumento()}">
+                        <td>
+                            <a class="instrumento" th:href="@{/catalogo/{simbolo}(simbolo=${instrumento.simbolo})}">
+                                <span class="icono-instrumento"
+                                      th:classappend="|icono-instrumento--${instrumento.tipo.name()}|"
+                                      th:text="${instrumento.iniciales}" aria-hidden="true">AA</span>
+                                <span class="instrumento__texto">
+                                    <strong th:text="${instrumento.simbolo}">AAPL</strong>
+                                    <small th:text="${instrumento.nombre}">Nombre</small>
+                                </span>
+                            </a>
+                        </td>
+                        <td class="numero" th:text="${@formatos.entero(fila.cantidadActual())}">0</td>
+                        <td class="numero" th:classappend="${r.tendenciaDe(fila.gananciaRealizada())}"
+                            th:text="${@formatos.dinero(fila.gananciaRealizada())}">0</td>
+                        <td class="numero" th:classappend="${r.tendenciaDe(fila.gananciaNoRealizada())}"
+                            th:text="${@formatos.dinero(fila.gananciaNoRealizada())}">0</td>
+                        <td class="numero precio" th:classappend="${r.tendenciaDe(fila.total())}"
+                            th:text="${@formatos.dinero(fila.total())}">0</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel" aria-labelledby="titulo-desglose">
+            <h2 id="titulo-desglose">De dónde sale el rendimiento</h2>
+            <dl class="resumen__datos">
+                <div>
+                    <dt>P&amp;L realizado</dt>
+                    <dd th:classappend="${r.tendenciaDe(r.gananciaRealizada())}"
+                        th:text="${@formatos.dinero(r.gananciaRealizada())}">0</dd>
+                </div>
+                <div>
+                    <dt>+ P&amp;L no realizado</dt>
+                    <dd th:classappend="${r.tendenciaDe(r.gananciaNoRealizada())}"
+                        th:text="${@formatos.dinero(r.gananciaNoRealizada())}">0</dd>
+                </div>
+                <div>
+                    <dt>− Comisiones pagadas</dt>
+                    <dd class="negativo" th:text="${@formatos.dinero(r.comisionesPagadas())}">0</dd>
+                </div>
+                <div>
+                    <dt>+ Intereses de ahorro</dt>
+                    <dd class="positivo" th:text="${@formatos.dinero(r.interesesGanados())}">0</dd>
+                </div>
+                <div class="resumen__total">
+                    <dt>= Rendimiento total</dt>
+                    <dd th:text="${@formatos.dinero(resumen.rendimiento())}">0</dd>
+                </div>
+            </dl>
+            <p class="nota">El costo base no incluye comisiones, por eso se restan aparte. Puede haber diferencias de
+                centavos por redondeo.</p>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

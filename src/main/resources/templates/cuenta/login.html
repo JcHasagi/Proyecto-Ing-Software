@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Iniciar sesión')}"></head>
+<body class="publica">
+<main class="tarjeta-acceso">
+    <div class="tarjeta-acceso__marca">
+        <svg th:replace="~{fragments/iconos :: marca}"></svg>
+        <div>
+            <strong>SimInversión</strong>
+            <small>Simulador de inversión con datos históricos</small>
+        </div>
+    </div>
+
+    <h1>Iniciar sesión</h1>
+
+    <p class="aviso exito" th:if="${param.registrado}">Cuenta creada. Ya puedes iniciar sesión.</p>
+    <p class="aviso" th:if="${param.salida}">Cerraste sesión.</p>
+    <p class="aviso error" th:if="${param.error}">Correo o contraseña incorrectos.</p>
+
+    <form th:action="@{/login}" method="post" class="formulario">
+        <label for="correo">Correo</label>
+        <input id="correo" name="correo" type="email" autocomplete="username" required autofocus>
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required>
+
+        <button type="submit" class="boton">Entrar</button>
+    </form>
+
+    <p class="tarjeta-acceso__alterna">¿No tienes cuenta? <a th:href="@{/registro}">Regístrate</a></p>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Catálogo')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('catalogo')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Catálogo', 'Instrumentos', null, 'catalogo')}"></header>
+
+<main class="contenido">
+    <section class="panel" th:with="cantidad=${#lists.size(instrumentos)}">
+        <div class="panel__cabecera">
+            <div>
+                <h1>Catálogo de instrumentos</h1>
+                <p class="nota">Precio por unidad en USD al último cierre disponible.</p>
+            </div>
+            <span class="contador" th:text="${cantidad == 1} ? '1 instrumento' : |${cantidad} instrumentos|">23 instrumentos</span>
+        </div>
+
+        <div class="barra-filtros">
+            <nav class="segmentos" aria-label="Filtrar por tipo">
+                <a th:href="@{/catalogo(texto=${texto})}" th:classappend="${tipoSeleccionado == null} ? 'activo'"
+                   th:attr="aria-current=${tipoSeleccionado == null} ? 'page' : null">Todos</a>
+                <a th:each="tipo : ${tipos}" th:href="@{/catalogo(tipo=${tipo.name()}, texto=${texto})}"
+                   th:text="${tipo.etiqueta}" th:classappend="${tipo == tipoSeleccionado} ? 'activo'"
+                   th:attr="aria-current=${tipo == tipoSeleccionado} ? 'page' : null">Tipo</a>
+            </nav>
+
+            <form th:action="@{/catalogo}" method="get" class="busqueda" role="search">
+                <input type="hidden" name="tipo" th:if="${tipoSeleccionado != null}" th:value="${tipoSeleccionado.name()}">
+                <svg th:replace="~{fragments/iconos :: buscar}"></svg>
+                <label class="solo-lector" for="texto">Buscar por símbolo o nombre</label>
+                <input id="texto" name="texto" type="search" th:value="${texto}" placeholder="Buscar símbolo o nombre">
+            </form>
+        </div>
+
+        <p th:if="${cantidad == 0}" class="vacio">No hay instrumentos que coincidan con el filtro.</p>
+
+        <div class="tabla-desplazable" th:unless="${cantidad == 0}">
+            <table class="tabla">
+                <thead>
+                <tr>
+                    <th scope="col">Instrumento</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col" class="numero">Último cierre (USD)</th>
+                    <th scope="col" class="numero">Fecha</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="instrumento : ${instrumentos}">
+                    <td>
+                        <a class="instrumento" th:href="@{/catalogo/{simbolo}(simbolo=${instrumento.simbolo()})}">
+                            <span class="icono-instrumento"
+                                  th:classappend="|icono-instrumento--${instrumento.tipo().name()}|"
+                                  th:text="${instrumento.iniciales()}" aria-hidden="true">AA</span>
+                            <span class="instrumento__texto">
+                                <strong th:text="${instrumento.simbolo()}">AAPL</strong>
+                                <small th:text="${instrumento.nombre()}">Nombre</small>
+                            </span>
+                        </a>
+                    </td>
+                    <td><span class="insignia" th:classappend="|insignia--${instrumento.tipo().name()}|"
+                              th:text="${instrumento.tipo().etiqueta}">Acción</span></td>
+                    <td class="tenue" th:text="${instrumento.sector() ?: '—'}">Sector</td>
+                    <td class="numero precio"
+                        th:text="${instrumento.ultimoCierre() == null ? 'Sin datos' : @formatos.precio(instrumento.ultimoCierre().cierre())}"
+                        th:classappend="${instrumento.ultimoCierre() == null} ? 'tenue'">0,00</td>
+                    <td class="numero tenue"
+                        th:text="${instrumento.ultimoCierre() == null ? '—' : @formatos.fecha(instrumento.ultimoCierre().fecha())}">—</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

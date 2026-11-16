@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Escenarios')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('escenarios')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Escenarios', 'Períodos históricos', null, 'escenarios')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Escenarios históricos</h1>
+            <p class="nota">Practica en un período real del mercado. Cada escenario crea un portafolio nuevo con el reloj
+                al inicio del período; tus otros portafolios no cambian. Al llegar a la fecha final, el portafolio
+                queda finalizado.</p>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+    <div class="escenarios">
+        <article class="panel escenario" th:each="vista : ${escenarios}" th:with="e=${vista.escenario()}">
+            <div class="escenario__cabecera">
+                <h2 th:text="${e.nombre}">Crisis financiera de 2008</h2>
+                <span class="contador" th:text="|${@formatos.fecha(e.fechaInicio)} – ${@formatos.fecha(e.fechaFin)}|">período</span>
+            </div>
+            <p class="nota" th:text="${e.descripcion}">Descripción</p>
+            <p class="escenario__cobertura">
+                <span th:text="${vista.instrumentosConPrecios()}">21</span> de
+                <span th:text="${vista.instrumentosEnCatalogo()}">23</span> instrumentos tienen precios en este período.
+            </p>
+            <form th:action="@{/escenarios/{id}(id=${e.id})}" method="post" class="escenario__formulario">
+                <label th:for="|saldo-${e.id}|">Saldo inicial (USD)</label>
+                <input th:id="|saldo-${e.id}|" name="saldoInicial" type="number" min="1000" max="100000" step="0.01"
+                       th:value="${saldoPorDefecto}" required>
+                <button type="submit" class="boton">
+                    <svg th:replace="~{fragments/iconos :: escenarios}"></svg>
+                    <span>Empezar escenario</span>
+                </button>
+            </form>
+        </article>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

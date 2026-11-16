@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera(${articulo.titulo})}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('aprende')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Aprende', ${articulo.titulo}, null, 'aprende')}"></header>
+
+<main class="contenido">
+    <div class="lectura">
+        <article class="panel articulo">
+            <p><a th:href="@{/aprende}">← Todos los temas</a></p>
+            <h1 th:text="${articulo.titulo}">Título</h1>
+            <p class="articulo__resumen" th:text="${articulo.resumen}">Resumen</p>
+            <th:block th:if="${articulo.tieneContenido()}">
+                <p th:each="parrafo : ${articulo.parrafos()}" th:text="${parrafo}">Párrafo</p>
+            </th:block>
+            <p th:unless="${articulo.tieneContenido()}" class="aviso">Este tema todavía no tiene contenido.</p>
+            <p class="nota articulo__aviso">Contenido educativo. No es una recomendación de inversión.</p>
+        </article>
+
+        <nav class="panel otros-temas" aria-label="Otros temas">
+            <h2>Otros temas</h2>
+            <ul>
+                <li th:each="otro : ${articulos}">
+                    <a th:href="@{/aprende/{id}(id=${otro.id})}" th:text="${otro.titulo}"
+                       th:classappend="${otro.id == articulo.id} ? 'activo'"
+                       th:attr="aria-current=${otro.id == articulo.id} ? 'page' : null">Tema</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Cuenta de ahorro')}"></head>
+<body class="app" th:with="a=${ahorro}, p=${ahorro.portafolio()}">
+<aside th:replace="~{fragments/plantilla :: lateral('portafolio')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${p.nombre}, 'Cuenta de ahorro', null, 'portafolio')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Cuenta de ahorro</h1>
+            <p class="nota">Mueve dinero entre el efectivo y una cuenta que paga intereses, para comparar ahorrar con invertir.</p>
+        </div>
+    </div>
+
+    <nav th:replace="~{fragments/plantilla :: subnav(${p.id}, 'ahorro')}"></nav>
+    <div th:replace="~{fragments/plantilla :: avisos}"></div>
+
+    <section th:unless="${a.tieneCuenta()}" class="panel mensaje-confirmacion">
+        <h2>Este portafolio todavía no tiene cuenta de ahorro</h2>
+        <p class="nota">Paga una tasa fija anual sobre el saldo. Los intereses se suman en cada día que avanza el reloj y
+            quedan registrados como transacciones.</p>
+        <form th:if="${p.admiteOperaciones()}" th:action="@{/portafolios/{id}/ahorro(id=${p.id})}" method="post"
+              class="acciones">
+            <button type="submit" class="boton">Abrir cuenta de ahorro</button>
+        </form>
+        <p th:unless="${p.admiteOperaciones()}" class="aviso">
+            El portafolio está <span th:text="${#strings.toLowerCase(p.estado.etiqueta)}">finalizado</span>: solo permite consultas.
+        </p>
+    </section>
+
+    <th:block th:if="${a.tieneCuenta()}">
+        <div class="tarjetas">
+            <div class="tarjeta">
+                <span class="etiqueta">Saldo de ahorro</span>
+                <strong class="cifra-grande" th:text="${@formatos.dinero(a.saldoAhorro())}">US$ 0</strong>
+                <span class="nota" th:text="|Tasa anual de ${@formatos.tasa(a.cuenta().tasaAnual)}|">Tasa</span>
+            </div>
+            <div class="tarjeta">
+                <span class="etiqueta">Intereses ganados</span>
+                <strong class="cifra positivo" th:text="${@formatos.dinero(a.interesesGanados())}">US$ 0</strong>
+                <span class="nota" th:text="|Desde el ${@formatos.fecha(a.cuenta().fechaAperturaSim)}|">Desde</span>
+            </div>
+            <div class="tarjeta">
+                <span class="etiqueta">Efectivo disponible</span>
+                <strong class="cifra" th:text="${@formatos.dinero(a.efectivoDisponible())}">US$ 0</strong>
+                <span class="nota">Efectivo menos compras pendientes</span>
+            </div>
+        </div>
+
+        <div class="portafolio-cuerpo">
+            <section class="panel" aria-labelledby="titulo-movimientos">
+                <h2 id="titulo-movimientos">Movimientos</h2>
+                <p th:if="${#lists.isEmpty(a.movimientos())}" class="vacio">Todavía no hay movimientos.</p>
+                <div class="tabla-desplazable" th:unless="${#lists.isEmpty(a.movimientos())}">
+                    <table class="tabla">
+                        <thead>
+                        <tr>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Movimiento</th>
+                            <th scope="col" class="numero">Monto</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="t : ${a.movimientos()}">
+                            <td th:text="${@formatos.fecha(t.fechaSim)}">fecha</td>
+                            <td><span class="tipo-transaccion" th:classappend="|tipo-transaccion--${t.tipo.name()}|"
+                                      th:text="${t.tipo.etiqueta}">Depósito</span></td>
+                            <td class="numero" th:classappend="${t.tipo.signoAhorro > 0} ? 'positivo' : 'negativo'"
+                                th:text="|${t.tipo.signoAhorro > 0 ? '+' : '−'}${@formatos.dinero(t.monto)}|">0</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="panel panel--reloj" aria-labelledby="titulo-mover">
+                <h2 id="titulo-mover">Mover dinero</h2>
+                <th:block th:if="${p.admiteOperaciones()}">
+                    <form th:action="@{/portafolios/{id}/ahorro/deposito(id=${p.id})}" method="post" class="formulario">
+                        <label for="monto-deposito">Depositar desde el efectivo (USD)</label>
+                        <input id="monto-deposito" name="monto" type="number" min="0.01" step="0.01" required>
+                        <button type="submit" class="boton">Depositar</button>
+                    </form>
+                    <form th:action="@{/portafolios/{id}/ahorro/retiro(id=${p.id})}" method="post" class="formulario">
+                        <label for="monto-retiro">Retirar al efectivo (USD)</label>
+                        <input id="monto-retiro" name="monto" type="number" min="0.01" step="0.01" required>
+                        <button type="submit" class="boton boton--contorno">Retirar</button>
+                    </form>
+                </th:block>
+                <p th:unless="${p.admiteOperaciones()}" class="aviso">
+                    El portafolio está <span th:text="${#strings.toLowerCase(p.estado.etiqueta)}">finalizado</span>:
+                    ya no admite depósitos ni retiros.
+                </p>
+            </section>
+        </div>
+    </th:block>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

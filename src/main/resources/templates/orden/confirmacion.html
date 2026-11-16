@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Confirmar orden')}"></head>
+<body class="app" th:with="e=${estimacion}, instrumento=${estimacion.instrumento()}">
+<aside th:replace="~{fragments/plantilla :: lateral('catalogo')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior(${instrumento.simbolo}, ${instrumento.tipo.etiqueta}, ${instrumento.iniciales}, ${instrumento.tipo.name()})}"></header>
+
+<main class="contenido">
+    <section class="panel mensaje-confirmacion">
+        <h1>
+            Confirmar orden de <span th:text="${#strings.toLowerCase(e.tipo().etiqueta)}">compra</span>
+        </h1>
+        <p class="nota">
+            <strong th:text="|${@formatos.entero(e.cantidad())} ${instrumento.simbolo}|">10 AAPL</strong>
+            · <span th:text="${instrumento.nombre}">Apple Inc.</span>
+        </p>
+
+        <dl class="resumen__datos">
+            <div>
+                <dt>Precio de referencia</dt>
+                <dd>
+                    <span th:text="${@formatos.precio(e.precioReferencia())}">0</span>
+                    <small class="tenue" th:text="|cierre del ${@formatos.fecha(e.fechaPrecio())}|">cierre</small>
+                </dd>
+            </div>
+            <div>
+                <dt>Monto estimado</dt>
+                <dd th:text="${@formatos.dinero(e.monto())}">0</dd>
+            </div>
+            <div>
+                <dt>Comisión estimada (0,3 %, mínimo US$ 5)</dt>
+                <dd th:text="${@formatos.dinero(e.comision())}">0</dd>
+            </div>
+            <div class="resumen__total">
+                <dt th:text="${e.esCompra()} ? 'Costo total estimado' : 'Ingreso neto estimado'">Total</dt>
+                <dd th:text="${@formatos.dinero(e.totalEstimado())}">0</dd>
+            </div>
+            <div>
+                <dt>Efectivo disponible</dt>
+                <dd th:text="${@formatos.dinero(e.efectivoDisponible())}">0</dd>
+            </div>
+            <div>
+                <dt>Efectivo después de la orden (estimado)</dt>
+                <dd th:text="${@formatos.dinero(e.efectivoResultante())}">0</dd>
+            </div>
+            <div th:unless="${e.esCompra()}">
+                <dt>Unidades disponibles para vender</dt>
+                <dd th:text="${@formatos.entero(e.unidadesDisponibles())}">0</dd>
+            </div>
+        </dl>
+
+        <p class="aviso">
+            Esto es una estimación. La orden queda <strong>pendiente</strong> y se ejecuta al precio de cierre del
+            siguiente día bursátil después del <span th:text="${@formatos.fecha(e.fechaSimulada())}">fecha</span>,
+            cuando avances el reloj; ese precio puede ser distinto.
+        </p>
+
+        <form th:action="@{/portafolios/{id}/ordenes(id=${e.portafolioId()})}" method="post" class="acciones">
+            <input type="hidden" name="simbolo" th:value="${instrumento.simbolo}">
+            <input type="hidden" name="tipo" th:value="${e.tipo().name()}">
+            <input type="hidden" name="cantidad" th:value="${e.cantidad()}">
+            <button type="submit" class="boton" th:classappend="${e.esCompra()} ? '' : 'boton--venta'"
+                    th:text="${e.esCompra()} ? 'Confirmar compra' : 'Confirmar venta'">Confirmar</button>
+            <a class="boton boton--contorno" th:href="@{/catalogo/{simbolo}(simbolo=${instrumento.simbolo})}">Cancelar</a>
+        </form>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

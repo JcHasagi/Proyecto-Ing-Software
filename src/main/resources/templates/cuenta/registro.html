@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Crear cuenta')}"></head>
+<body class="publica">
+<main class="tarjeta-acceso">
+    <div class="tarjeta-acceso__marca">
+        <svg th:replace="~{fragments/iconos :: marca}"></svg>
+        <div>
+            <strong>SimInversión</strong>
+            <small>Empiezas con saldo ficticio; no hay dinero real</small>
+        </div>
+    </div>
+
+    <h1>Crear cuenta</h1>
+
+    <form th:action="@{/registro}" th:object="${formulario}" method="post" class="formulario" novalidate>
+        <p class="aviso error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+           th:text="${error}">Error</p>
+
+        <label for="correo">Correo</label>
+        <input id="correo" type="email" th:field="*{correo}" autocomplete="email" required>
+        <span class="error-campo" th:if="${#fields.hasErrors('correo')}" th:errors="*{correo}">Error</span>
+
+        <label for="nombre">Nombre</label>
+        <input id="nombre" type="text" th:field="*{nombre}" autocomplete="name" required>
+        <span class="error-campo" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</span>
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" type="password" th:field="*{contrasena}" autocomplete="new-password" required>
+        <span class="ayuda">Mínimo 8 caracteres.</span>
+        <span class="error-campo" th:if="${#fields.hasErrors('contrasena')}" th:errors="*{contrasena}">Error</span>
+
+        <label for="confirmacionContrasena">Confirmar contraseña</label>
+        <input id="confirmacionContrasena" type="password" th:field="*{confirmacionContrasena}"
+               autocomplete="new-password" required>
+        <span class="error-campo" th:if="${#fields.hasErrors('confirmacionContrasena')}"
+              th:errors="*{confirmacionContrasena}">Error</span>
+
+        <button type="submit" class="boton">Crear cuenta</button>
+    </form>
+
+    <p class="tarjeta-acceso__alterna">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión</a></p>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Nuevo portafolio')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('portafolio')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Nuevo portafolio', 'Crear simulación', null, 'portafolio')}"></header>
+
+<main class="contenido">
+    <div class="carga">
+        <section class="panel">
+            <h1>Nuevo portafolio</h1>
+            <p class="nota">Empiezas con efectivo ficticio en USD y un reloj propio que solo avanza cuando tú lo decides.</p>
+
+            <form th:action="@{/portafolios}" th:object="${formulario}" method="post" class="formulario" novalidate>
+                <p class="aviso error" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                   th:text="${error}">Error</p>
+
+                <label for="nombre">Nombre</label>
+                <input id="nombre" type="text" th:field="*{nombre}" maxlength="80" required>
+                <span class="error-campo" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">Error</span>
+
+                <label for="saldoInicial">Saldo inicial (USD)</label>
+                <input id="saldoInicial" type="number" th:field="*{saldoInicial}" min="1000" max="100000" step="0.01"
+                       required>
+                <span class="ayuda">Entre US$ 1.000 y US$ 100.000. Por defecto, US$ 10.000.</span>
+                <span class="error-campo" th:if="${#fields.hasErrors('saldoInicial')}" th:errors="*{saldoInicial}">Error</span>
+
+                <label for="fechaInicial">Fecha inicial del reloj</label>
+                <input id="fechaInicial" type="date" th:field="*{fechaInicial}"
+                       th:attr="min=${primeraFecha}, max=${ultimaFecha}" required>
+                <span class="ayuda" th:if="${primeraFecha != null}">
+                    Histórico disponible del <span th:text="${@formatos.fecha(primeraFecha)}">03/01/2005</span>
+                    al <span th:text="${@formatos.fecha(ultimaFecha)}">14/11/2026</span>. Si la fecha no tiene cotizaciones,
+                    el reloj empieza el siguiente día bursátil.
+                </span>
+                <span class="error-campo" th:if="${#fields.hasErrors('fechaInicial')}" th:errors="*{fechaInicial}">Error</span>
+
+                <div class="acciones">
+                    <button type="submit" class="boton">Crear portafolio</button>
+                    <a class="boton boton--contorno" th:href="@{/portafolios}">Cancelar</a>
+                </div>
+            </form>
+        </section>
+
+        <aside class="panel panel--ayuda" aria-labelledby="titulo-reglas">
+            <h2 id="titulo-reglas">Cómo funciona</h2>
+            <ul>
+                <li>Las órdenes no se ejecutan al precio que ves: quedan pendientes y se ejecutan al cierre del siguiente
+                    día bursátil, cuando avanzas el reloj.</li>
+                <li>Cada ejecución cobra una comisión del 0,3 % del monto, con un mínimo de US$ 5.</li>
+                <li>Solo cantidades enteras y sin venta en corto.</li>
+                <li>El reloj nunca retrocede. Para volver a empezar, reinicia el portafolio o crea otro.</li>
+            </ul>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

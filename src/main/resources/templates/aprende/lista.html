@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Aprende')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('aprende')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Aprende', 'Contenido educativo', null, 'aprende')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Aprende</h1>
+            <p class="nota">Conceptos básicos para usar el simulador. Es contenido educativo, no una recomendación de inversión.</p>
+        </div>
+    </div>
+
+    <p th:if="${#lists.isEmpty(articulos)}" class="vacio">Todavía no hay temas publicados.</p>
+
+    <div class="temas">
+        <a class="panel tema" th:each="articulo : ${articulos}" th:href="@{/aprende/{id}(id=${articulo.id})}">
+            <span class="tema__numero" th:text="${articulo.ordenVisualizacion}">1</span>
+            <span class="tema__texto">
+                <strong th:text="${articulo.titulo}">Título</strong>
+                <span class="nota" th:text="${articulo.resumen}">Resumen</span>
+            </span>
+        </a>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>

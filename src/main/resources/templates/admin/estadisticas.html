@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/plantilla :: cabecera('Estadísticas')}"></head>
+<body class="app">
+<aside th:replace="~{fragments/plantilla :: lateral('estadisticas')}"></aside>
+<header th:replace="~{fragments/plantilla :: superior('Estadísticas', 'Administración', null, 'estadisticas')}"></header>
+
+<main class="contenido">
+    <div class="cabecera-pagina">
+        <div>
+            <h1>Estadísticas de uso</h1>
+            <p class="nota">Solo totales, sin datos personales. Las fechas son reales, no simuladas.</p>
+        </div>
+    </div>
+
+    <section class="panel">
+        <form th:action="@{/admin/estadisticas}" method="get" class="filtros-historial">
+            <div>
+                <label for="desde">Desde</label>
+                <input id="desde" name="desde" type="date" th:value="${desde}" required>
+            </div>
+            <div>
+                <label for="hasta">Hasta</label>
+                <input id="hasta" name="hasta" type="date" th:value="${hasta}" required>
+            </div>
+            <div class="filtros-historial__acciones">
+                <button type="submit" class="boton">Consultar</button>
+            </div>
+        </form>
+        <div th:replace="~{fragments/plantilla :: avisos}"></div>
+    </section>
+
+    <th:block th:if="${estadisticas != null}" th:with="e=${estadisticas}">
+        <div class="tarjetas">
+            <div class="tarjeta">
+                <span class="etiqueta">Usuarios registrados</span>
+                <strong class="cifra-grande cifra-grande--neutra" th:text="${@formatos.entero(e.usuariosRegistrados())}">0</strong>
+                <span class="nota" th:text="|${@formatos.entero(e.totalUsuarios())} en total|">total</span>
+            </div>
+            <div class="tarjeta">
+                <span class="etiqueta">Portafolios creados</span>
+                <strong class="cifra-grande cifra-grande--neutra" th:text="${@formatos.entero(e.portafoliosCreados())}">0</strong>
+                <span class="nota" th:text="|${@formatos.entero(e.portafoliosDeEscenario())} desde escenarios · ${@formatos.entero(e.totalPortafolios())} en total|">nota</span>
+            </div>
+            <div class="tarjeta">
+                <span class="etiqueta">Órdenes emitidas</span>
+                <strong class="cifra-grande cifra-grande--neutra" th:text="${@formatos.entero(e.ordenesEmitidas())}">0</strong>
+                <span class="nota" th:text="|${@formatos.entero(e.ordenesEjecutadas())} ejecutadas|">ejecutadas</span>
+            </div>
+        </div>
+
+        <div class="portafolio-cuerpo">
+            <section class="panel" aria-labelledby="titulo-por-estado">
+                <h2 id="titulo-por-estado">Órdenes por estado</h2>
+                <dl class="resumen__datos">
+                    <div th:each="entrada : ${e.ordenesPorEstado()}">
+                        <dt><span class="estado" th:classappend="|estado--${entrada.key.name()}|"
+                                  th:text="${entrada.key.etiqueta}">Estado</span></dt>
+                        <dd th:text="${@formatos.entero(entrada.value)}">0</dd>
+                    </div>
+                </dl>
+            </section>
+            <section class="panel" aria-labelledby="titulo-mas-operados">
+                <h2 id="titulo-mas-operados">Instrumentos con más órdenes</h2>
+                <p th:if="${#lists.isEmpty(e.instrumentosMasOperados())}" class="nota">No hubo órdenes en este rango.</p>
+                <dl class="resumen__datos" th:unless="${#lists.isEmpty(e.instrumentosMasOperados())}">
+                    <div th:each="fila : ${e.instrumentosMasOperados()}">
+                        <dt th:text="${fila.simbolo()}">AAPL</dt>
+                        <dd th:text="${@formatos.entero(fila.ordenes())}">0</dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
+    </th:block>
+</main>
+
+<footer th:replace="~{fragments/plantilla :: pie}"></footer>
+</body>
+</html>
