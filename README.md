@@ -39,7 +39,7 @@ Los comandos están escritos para PowerShell en Windows. En Linux o macOS se usa
 .\mvnw.cmd test
 ```
 
-Ejecuta todas las pruebas (98 al 16 de noviembre de 2026) sobre H2 en memoria. No requiere MySQL. El informe de cobertura queda en `target/site/jacoco/index.html`.
+Ejecuta todas las pruebas (99 al 16 de noviembre de 2026) sobre H2 en memoria. No requiere MySQL. El informe de cobertura queda en `target/site/jacoco/index.html`.
 
 ### Demostración con H2 en memoria
 
@@ -56,7 +56,7 @@ Cambia `ELIGE-UNA-CLAVE` por una clave de 8 caracteres o más. Luego abre <http:
 
 ### Con MySQL
 
-La aplicación todavía no se ha probado contra MySQL: hasta ahora todo se ha ejecutado con H2.
+Probada contra MySQL 8.4 el 16 de noviembre de 2026: migraciones, carga de los 23 históricos y el flujo completo (registro, órdenes, reloj, ahorro, escenarios, reinicio y administración).
 
 1. Crea la base de datos y un usuario:
 
@@ -124,8 +124,9 @@ Los datos se incluyen solo con fines educativos.
 ## Documentación
 
 - [docs/analisis-tecnico.md](docs/analisis-tecnico.md): estructura, patrones de diseño, fidelidad a los requerimientos, mediciones y pendientes.
+- [docs/cambios-para-el-srs.md](docs/cambios-para-el-srs.md): diferencias frente al SRS entregado, modelo de datos y diagrama de clases actualizados.
 - [datos/historico/FUENTES.md](datos/historico/FUENTES.md): origen y tratamiento de los datos históricos.
 
 ## Estado
 
-Las cuatro iteraciones del plan están implementadas (REQ-001 a REQ-019). Falta probar la aplicación contra MySQL y hacer la demostración sin conexión a internet.
+Las cuatro iteraciones del plan están implementadas (REQ-001 a REQ-019). Funciona con H2 y con MySQL 8.4. Falta hacer la demostración sin conexión a internet.

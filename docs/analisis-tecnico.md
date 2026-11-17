@@ -17,20 +17,19 @@ Cubre cuatro preguntas:
 | Patrones | Bien elegidos y sin sobreingeniería. El libro de transacciones inmutable es la mejor decisión del diseño. Se corrigieron tres problemas: servicios que dependían de la capa web, consultas repetidas por fila (N+1) y lecturas duplicadas del libro. |
 | Fidelidad a lo pedido | Alta. De 19 requerimientos, 17 cumplen el flujo original completo y 2 lo cumplen con una variación. REQ-018 estaba parcial y se completó en esta revisión. Las 5 decisiones de arquitectura y las 10 reglas de negocio se respetan. |
 | Rendimiento | No era un problema, pero había consultas de sobra. El detalle del portafolio pasó de 31 a 17 consultas SQL y el historial de 13 a 3. |
-| Pruebas | 98 pruebas automáticas, todas pasan. Cobertura de líneas del 87,0 %. Los cálculos de dinero (costo base, comisión, intereses) están al 100 %. |
+| Pruebas | 99 pruebas automáticas, todas pasan. Cobertura de líneas del 87,0 %. Los cálculos de dinero (costo base, comisión, intereses) están al 100 %. |
 
 Lo más importante que sigue pendiente, en orden:
 
-1. **La aplicación nunca se ha ejecutado contra MySQL.** Todas las pruebas y demostraciones corrieron con H2 en modo MySQL.
-2. **La demostración sin red** (criterio de aceptación 5, RNF-07) no se ha hecho.
-3. **Las divisas y criptomonedas** estaban fuera de alcance en el documento original. Se agregaron a petición del equipo y hay que reflejarlo en el SRS.
+1. **La demostración sin red** (criterio de aceptación 5, RNF-07) no se ha hecho.
+2. **Las divisas y criptomonedas** estaban fuera de alcance en el documento original. Se agregaron a petición del equipo y hay que reflejarlo en el SRS.
 
 ## Cómo se hizo la revisión
 
 - **Código:** lectura completa de `src/main/java` (104 archivos y 5.278 líneas al empezar; 106 y 5.416 al terminar), de las 22 plantillas y de las 5 migraciones.
 - **Referencia para la fidelidad:** el catálogo de requerimientos *anterior* a la versión 2.0 y la especificación inicial del proyecto. La versión 2.0 de `requerimientos.md` se escribió para reflejar el código, así que compararla con el código no diría nada. En cada desviación se indica si la versión 2.0 ya la documenta.
 - **Rendimiento:** se contaron las sentencias SQL que prepara Hibernate en cada operación, antes y después de los cambios, con un portafolio de 10 posiciones, cuenta de ahorro y un año de reloj (439 transacciones). Se cuentan consultas y no milisegundos porque el tiempo de una sola corrida sobre H2 en memoria no es una medida fiable.
-- **Verificación de los cambios:** `mvnw test` (98 pruebas en verde). Las páginas se verificaron con las pruebas de MockMvc. En el navegador solo se recorrió la carga de históricos en dos pasos; el resto de la aplicación no se volvió a recorrer después de los cambios.
+- **Verificación de los cambios:** `mvnw test` (99 pruebas en verde). Las páginas se verificaron con las pruebas de MockMvc. En el navegador solo se recorrió la carga de históricos en dos pasos; el resto de la aplicación no se volvió a recorrer después de los cambios.
 
 ## 1. Estructura del proyecto
 
@@ -171,13 +170,13 @@ Observer, State de GoF con una clase por estado, Abstract Factory y Singletons p
 
 | Requerimiento | Estado | Evidencia |
 |---|---|---|
-| RNF-01 Rendimiento | Cumple | Medido en iteraciones anteriores con el histórico real sobre H2: detalle del portafolio en 0,15 s (límite 2 s) y gráfico de 5 años entre 0,15 y 0,7 s (límite 3 s). Desde esta revisión, `PresupuestoDeConsultasTest` limita las consultas por operación. Falta medir en MySQL. |
+| RNF-01 Rendimiento | Cumple | Medido en iteraciones anteriores con el histórico real sobre H2: detalle del portafolio en 0,15 s (límite 2 s) y gráfico de 5 años entre 0,15 y 0,7 s (límite 3 s). Desde esta revisión, `PresupuestoDeConsultasTest` limita las consultas por operación. En MySQL 8.4, con un portafolio de un año: detalle en 0,12 s, gráfico de 5 años en 0,14 s y avance de un año en 0,57 s. |
 | RNF-02 Seguridad | Cumple | bcrypt con costo 12, sesión de 30 minutos. Prueba nueva: una sesión cerrada no se puede reutilizar. |
 | RNF-03 Aislamiento | Cumple | `AccesoCruzadoTest`. Un portafolio ajeno responde 404. |
 | RNF-04 Atomicidad | Cumple | Prueba nueva: `AtomicidadDelAvanceTest` provoca un fallo a mitad del avance y comprueba que no queda nada. |
 | RNF-05 Precisión decimal | Cumple | No hay ningún `double` ni `float` en el código de la aplicación. |
 | RNF-06 Usabilidad | Cumple | Los mensajes de los flujos alternativos dicen qué pasó y qué hacer. |
-| RNF-07 Sin conexión | **Sin verificar** | No hay CDN ni recursos externos, pero la demostración con la red desconectada no se ha hecho. |
+| RNF-07 Sin conexión | **Sin verificar del todo** | `SinRecursosExternosTest` comprueba que ninguna plantilla, hoja de estilos o script pide recursos a otro servidor. Falta la demostración con la red desconectada. |
 | RNF-08 Pruebas | Cumple | El informe de cobertura que pide el criterio ahora existe (JaCoCo). |
 
 ### Decisiones de arquitectura y criterios de aceptación
@@ -257,7 +256,7 @@ Ninguno de estos cambios altera lo que ve el usuario.
 
 ## 5. Pruebas
 
-98 pruebas en 23 clases. Todas pasan.
+99 pruebas en 24 clases. Todas pasan.
 
 ### Cobertura (JaCoCo)
 
@@ -287,7 +286,7 @@ Los paquetes con menos cobertura son `escenario` (62 %) y `portafolio` (73 %). L
 ### Huecos que quedan
 
 - **Concurrencia.** No hay prueba de dos operaciones simultáneas sobre el mismo portafolio (el bloqueo optimista).
-- **MySQL.** Ninguna prueba corre contra MySQL.
+- **MySQL.** Las pruebas automáticas corren sobre H2. Contra MySQL 8.4 se hizo una verificación manual el 16 de noviembre de 2026: migraciones, carga de los 23 históricos y el flujo completo, sin errores.
 - **Precios futuros en la web.** Está probado en el proveedor de precios, pero no hay una prueba de la página del instrumento con un portafolio activo en una fecha pasada.
 
 ## 6. Seguridad
@@ -312,13 +311,12 @@ Lo que falta:
 
 | # | Pendiente | Por qué importa |
 |---|---|---|
-| 1 | Ejecutar la aplicación y las migraciones contra MySQL 8.4. | Es la base de datos del proyecto y nunca se ha usado. |
-| 2 | Hacer la demostración con la red desconectada. | Criterio de aceptación 5 y RNF-07. |
-| 3 | Actualizar el SRS y el diagrama de clases. | Aún no reflejan divisas, criptomonedas, USD ni el modelo de datos real. |
-| 4 | Definir la política de contraseñas y limitar los intentos de inicio de sesión. | Seguridad. |
-| 5 | Agregar una prueba de concurrencia del bloqueo optimista. | Es el único mecanismo importante sin prueba. |
-| 6 | Separar el resumen del portafolio en un servicio de consulta. | Rompe tres de los cuatro ciclos entre paquetes. |
-| 7 | Paginar el historial o filtrarlo en SQL. | Solo si los portafolios crecen a varios años con cuenta de ahorro. |
+| 1 | Hacer la demostración con la red desconectada. | Criterio de aceptación 5 y RNF-07. |
+| 2 | Pasar al SRS y al PDF de UML los cambios de `docs/cambios-para-el-srs.md`. | El texto, el modelo de datos y el diagrama de clases actualizados ya están ahí; falta copiarlos a los documentos entregables. |
+| 3 | Definir la política de contraseñas y limitar los intentos de inicio de sesión. | Seguridad. |
+| 4 | Agregar una prueba de concurrencia del bloqueo optimista. | Es el único mecanismo importante sin prueba. |
+| 5 | Separar el resumen del portafolio en un servicio de consulta. | Rompe tres de los cuatro ciclos entre paquetes. |
+| 6 | Paginar el historial o filtrarlo en SQL. | Solo si los portafolios crecen a varios años con cuenta de ahorro. |
 
 ### Preparación del repositorio
 
@@ -339,6 +337,6 @@ Por decidir antes de publicar:
 .\mvnw.cmd test
 ```
 
-Ejecuta las 98 pruebas y deja el informe de cobertura en `target/site/jacoco/index.html`.
+Ejecuta las 99 pruebas y deja el informe de cobertura en `target/site/jacoco/index.html`.
 
 Los límites de consultas por operación están en `src/test/java/co/edu/uis/siminversion/PresupuestoDeConsultasTest.java`. La columna "Antes" de la sección 4 se obtuvo con esa misma prueba sobre el código anterior a los cambios.

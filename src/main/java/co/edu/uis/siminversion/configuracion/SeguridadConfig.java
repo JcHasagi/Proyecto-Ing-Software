@@ -23,7 +23,8 @@ public class SeguridadConfig {
     public SecurityFilterChain cadenaDeSeguridad(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(peticiones -> peticiones
-                .requestMatchers("/login", "/registro", "/css/**", "/js/**", "/error", "/favicon.ico").permitAll()
+                .requestMatchers("/login", "/registro", "/css/**", "/js/**", "/error", "/favicon.ico",
+                        "/favicon.svg").permitAll()
                 // Las funciones de administrador se bloquean en el servidor, no solo en la interfaz.
                 .requestMatchers("/admin/**").hasRole(Rol.ADMINISTRADOR.name())
                 .anyRequest().authenticated())
