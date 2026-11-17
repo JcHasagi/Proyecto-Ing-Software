@@ -21,8 +21,7 @@ Cubre cuatro preguntas:
 
 Lo más importante que sigue pendiente, en orden:
 
-1. **La demostración sin red** (criterio de aceptación 5, RNF-07) no se ha hecho.
-2. **Las divisas y criptomonedas** estaban fuera de alcance en el documento original. Se agregaron a petición del equipo y hay que reflejarlo en el SRS.
+1. **Las divisas y criptomonedas** estaban fuera de alcance en el documento original. Se agregaron a petición del equipo y hay que reflejarlo en el SRS.
 
 ## Cómo se hizo la revisión
 
@@ -176,7 +175,7 @@ Observer, State de GoF con una clase por estado, Abstract Factory y Singletons p
 | RNF-04 Atomicidad | Cumple | Prueba nueva: `AtomicidadDelAvanceTest` provoca un fallo a mitad del avance y comprueba que no queda nada. |
 | RNF-05 Precisión decimal | Cumple | No hay ningún `double` ni `float` en el código de la aplicación. |
 | RNF-06 Usabilidad | Cumple | Los mensajes de los flujos alternativos dicen qué pasó y qué hacer. |
-| RNF-07 Sin conexión | **Sin verificar del todo** | `SinRecursosExternosTest` comprueba que ninguna plantilla, hoja de estilos o script pide recursos a otro servidor. Falta la demostración con la red desconectada. |
+| RNF-07 Sin conexión | Cumple | El equipo hizo la demostración con la red desconectada el 16 de noviembre de 2026. Además, `SinRecursosExternosTest` comprueba que ninguna plantilla, hoja de estilos o script pide recursos a otro servidor. |
 | RNF-08 Pruebas | Cumple | El informe de cobertura que pide el criterio ahora existe (JaCoCo). |
 
 ### Decisiones de arquitectura y criterios de aceptación
@@ -195,7 +194,7 @@ Observer, State de GoF con una clase por estado, Abstract Factory y Singletons p
 | 2. Efectivo recalculado igual al mostrado, con 50 operaciones o más | Cumple, con prueba |
 | 3. Ninguna orden se ejecuta al precio visto al emitirla | Cumple, con prueba |
 | 4. Acceso cruzado entre usuarios rechazado | Cumple, con prueba |
-| 5. Demostración completa sin red | **Pendiente** |
+| 5. Demostración completa sin red | Cumple; la hizo el equipo el 16 de noviembre de 2026 |
 
 ### Cambios de alcance frente al original
 
@@ -311,12 +310,11 @@ Lo que falta:
 
 | # | Pendiente | Por qué importa |
 |---|---|---|
-| 1 | Hacer la demostración con la red desconectada. | Criterio de aceptación 5 y RNF-07. |
-| 2 | Pasar al SRS y al PDF de UML los cambios de `docs/cambios-para-el-srs.md`. | El texto, el modelo de datos y el diagrama de clases actualizados ya están ahí; falta copiarlos a los documentos entregables. |
-| 3 | Definir la política de contraseñas y limitar los intentos de inicio de sesión. | Seguridad. |
-| 4 | Agregar una prueba de concurrencia del bloqueo optimista. | Es el único mecanismo importante sin prueba. |
-| 5 | Separar el resumen del portafolio en un servicio de consulta. | Rompe tres de los cuatro ciclos entre paquetes. |
-| 6 | Paginar el historial o filtrarlo en SQL. | Solo si los portafolios crecen a varios años con cuenta de ahorro. |
+| 1 | Pasar al SRS y al PDF de UML los cambios de `docs/cambios-para-el-srs.md`. | El texto, el modelo de datos y el diagrama de clases actualizados ya están ahí; falta copiarlos a los documentos entregables. |
+| 2 | Definir la política de contraseñas y limitar los intentos de inicio de sesión. | Seguridad. |
+| 3 | Agregar una prueba de concurrencia del bloqueo optimista. | Es el único mecanismo importante sin prueba. |
+| 4 | Separar el resumen del portafolio en un servicio de consulta. | Rompe tres de los cuatro ciclos entre paquetes. |
+| 5 | Paginar el historial o filtrarlo en SQL. | Solo si los portafolios crecen a varios años con cuenta de ahorro. |
 
 ### Preparación del repositorio
 

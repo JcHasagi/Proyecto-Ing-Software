@@ -129,4 +129,4 @@ Los datos se incluyen solo con fines educativos.
 
 ## Estado
 
-Las cuatro iteraciones del plan están implementadas (REQ-001 a REQ-019). Funciona con H2 y con MySQL 8.4. Falta hacer la demostración sin conexión a internet.
+Las cuatro iteraciones del plan están implementadas (REQ-001 a REQ-019). Funciona con H2 y con MySQL 8.4, y también sin conexión a internet.
